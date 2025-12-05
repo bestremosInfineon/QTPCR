@@ -14,21 +14,23 @@ namespace QTPCR.Services.Contexts
         private readonly IConfiguration _configuration;
         private readonly IRealisService _realisService;
         private readonly IQtpServices _qtpServices;
+        private readonly ILogsServices _logsServices;
 
-        public string connectionString;
 
         public ChangeRequestServices(
             IConfiguration configuration, 
             IRealisService realisService, 
-            IQtpServices qtpServices)
+            IQtpServices qtpServices,
+            ILogsServices logsServices)
         {
             _configuration = configuration;
             _realisService = realisService;
             _qtpServices = qtpServices;
+            _logsServices = logsServices;
         }
 
 
-        public async Task<ChangeRequestResponse> GetRealisAllTestState()
+        public async Task<ChangeRequestResponse> GetRealisAllTestState(string qtpNumber)
         {
             string serviceCalled = "";
 
@@ -40,7 +42,7 @@ namespace QTPCR.Services.Contexts
             try
             {
 
-                List<StressTestDetails> result = await _qtpServices.StressTableRealisTestAll("adasd");
+                List<StressTestDetails> result = await _qtpServices.StressTableRealisTestAll(qtpNumber);
                 List<int> lots = new List<int>();
                 List<string> realisTestIDs = new List<string>();
                 if (result.Count == 0)
@@ -60,7 +62,7 @@ namespace QTPCR.Services.Contexts
 
                     string jsonString = JsonConvert.SerializeObject(jsonOutput);
 
-                    HttpResponseMessage message = await rs.GetRealisStressStatus(jsonString);
+                    HttpResponseMessage message = await _realisService.GetRealisStressStatus(jsonString);
                     if (!message.IsSuccessStatusCode)
                     {
                         var errorMessageJson = await message.Content.ReadAsStringAsync();
@@ -69,9 +71,9 @@ namespace QTPCR.Services.Contexts
                     }
                     var state = await message.Content.ReadAsStringAsync();
                     List<StateDataItem> data = JsonConvert.DeserializeObject<List<StateDataItem>>(state);
-                    List<TestState> testStateList = _qtpServices.GetAllowedTestStateForCR("Y,N/A");
-                    var onHoldStateName = QTPService.GetConfigByAttribute("ON HOLD");
-                    var hasOtherStateAndNoCRVal = QTPService.GetConfigByAttribute("HAS OTHER STATE BUT NO CR");
+                    List<TestState> testStateList = await _qtpServices.GetAllowedTestStateForCR("Y,N/A");
+                    var onHoldStateName = await _qtpServices.GetConfigByAttribute("ON HOLD");
+                    var hasOtherStateAndNoCRVal = await _qtpServices.GetConfigByAttribute("HAS OTHER STATE BUT NO CR");
                     var testStates = new Dictionary<string, List<List<string>>>();
                     if (data != null)
                     {
@@ -79,12 +81,12 @@ namespace QTPCR.Services.Contexts
                         {
                             foreach (var stateItem in data)
                             {
-                                if (stateItem.id == item.realisTestID)
+                                if (stateItem.Id == item.RealisTestID)
                                 {
-                                    var stateName = item.testCodeDisplay.ToUpper();
-                                    if (testStateList.Any(x => x.STATE_NAME.ToUpper() == stateItem.state.name.ToUpper()))
+                                    var stateName = item.TestCodeDisplay.ToUpper();
+                                    if (testStateList.Any(x => x.STATE_NAME?.ToUpper() == stateItem.State.Name?.ToUpper()))
                                     {
-                                        if (testStateList.Any(x => x.STATE_NAME.ToUpper() == stateItem.state.name.ToUpper() && x.ENABLE_CR != hasOtherStateAndNoCRVal))
+                                        if (testStateList.Any(x => x.STATE_NAME?.ToUpper() == stateItem.State.Name?.ToUpper() && x.ENABLE_CR != hasOtherStateAndNoCRVal))
                                         {
                                             if (!testStates.ContainsKey(stateName))
                                             {
@@ -93,14 +95,14 @@ namespace QTPCR.Services.Contexts
 
                                             testStates[stateName].Add(new List<string>
                                             {
-                                                item.lotNumber,
-                                                stateItem.state.name.ToUpper(),
+                                                item.LotNumber,
+                                                stateItem.State.Name?.ToUpper(),
                                                 "CR",
-                                                item.qtpTransID.ToString(),
-                                                item.testID.ToString()
+                                                item.QtpTransID.ToString(),
+                                                item.TestID.ToString()
                                             });
                                         }
-                                        if (testStateList.Any(x => x.STATE_NAME.ToUpper() == stateItem.state.name.ToUpper() && x.ENABLE_CR == hasOtherStateAndNoCRVal))
+                                        if (testStateList.Any(x => x.STATE_NAME?.ToUpper() == stateItem.State.Name?.ToUpper() && x.ENABLE_CR == hasOtherStateAndNoCRVal))
                                         {
                                             if (!testStates.ContainsKey(stateName))
                                             {
@@ -108,11 +110,11 @@ namespace QTPCR.Services.Contexts
                                             }
                                             testStates[stateName].Add(new List<string>
                                             {
-                                                item.lotNumber,
-                                                stateItem.state.name.ToUpper(),
+                                                item.LotNumber,
+                                                stateItem.State.Name.ToUpper(),
                                                 "NACR",
-                                                item.qtpTransID.ToString(),
-                                                item.testID.ToString()
+                                                item.QtpTransID.ToString(),
+                                                item.TestID.ToString()
                                             });
                                         }
                                     }
@@ -124,11 +126,11 @@ namespace QTPCR.Services.Contexts
                                         }
                                         testStates[stateName].Add(new List<string>
                                         {
-                                            item.lotNumber,
-                                            stateItem.state.name.ToUpper(),
+                                            item.LotNumber,
+                                            stateItem.State.Name.ToUpper(),
                                             "NOCR",
-                                            item.qtpTransID.ToString(),
-                                            item.testID.ToString()
+                                            item.QtpTransID.ToString(),
+                                            item.TestID.ToString()
                                         });
                                     }
                                 }
@@ -144,20 +146,20 @@ namespace QTPCR.Services.Contexts
                     //    testID = x.Value.First()[4].ToString(),
                     //    testStates = x.Value.Select(y => new object[] { y[0].ToString(), y[1].ToString().ToString(), y[2].ToString() }).ToList()
                     //}).ToArray();
-                    var output = testStates.SelectMany(x => x.Value.Select(y => new TestState
+                    var output = testStates.SelectMany(x => x.Value.Select(y => new QTPTestState
                     {
-                        stateName = x.Key,
-                        qtpTransID = y[3].ToString(),
-                        testID = y[4].ToString(),
-                        testStates = new List<object[]> { new object[] { y[0].ToString(), y[1].ToString(), y[2].ToString() } }
+                        StateName = x.Key,
+                        QtpTransID = y[3].ToString(),
+                        TestID = y[4].ToString(),
+                        TestStates = new List<object[]> { new object[] { y[0].ToString(), y[1].ToString(), y[2].ToString() } }
                     }))
-                    .GroupBy(x => new { x.stateName, x.qtpTransID, x.testID })
-                    .Select(g => new TestState
+                    .GroupBy(x => new { x.StateName, x.QtpTransID, x.TestID })
+                    .Select(g => new QTPTestState
                     {
-                        stateName = g.Key.stateName,
-                        qtpTransID = g.Key.qtpTransID,
-                        testID = g.Key.testID,
-                        testStates = g.SelectMany(x => x.testStates).ToList()
+                        StateName = g.Key.StateName,
+                        QtpTransID = g.Key.QtpTransID,
+                        TestID = g.Key.TestID,
+                        TestStates = g.SelectMany(x => x.TestStates).ToList()
                     })
                     .ToArray();
 
@@ -165,13 +167,25 @@ namespace QTPCR.Services.Contexts
                 }
                 else
                 {
-                    errorLog(serviceCalled, "No data in realisTestIDs", functionName);
+                    var errorLog = new ErrorModel
+                    {
+                        FunctionName = functionName,
+                        ExceptionStackTrace = "No data in realisTestIDs",
+                        Message = "No data in realisTestIDs"
+                    };
+                    await _logsServices.ErrorLog(errorLog);
                     return new ChangeRequestResponse { Success = false, ResponseText = _responseText, ResponseError = errorMessage };
                 }
             }
             catch (Exception ex)
             {
-                errorLog(serviceCalled, ex.Message, functionName);
+                var errorLog = new ErrorModel
+                {
+                    FunctionName = functionName,
+                    ExceptionStackTrace = "No data in realisTestIDs",
+                    Message = "No data in realisTestIDs"
+                };
+                await _logsServices.ErrorLog(errorLog);
                 return new ChangeRequestResponse { Success = false, ResponseText = _responseText, ResponseError = errorMessage };
             }
         }

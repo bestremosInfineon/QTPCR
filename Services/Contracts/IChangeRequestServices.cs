@@ -4,6 +4,6 @@ namespace QTPCR.Services.Contracts
 {
     public interface IChangeRequestServices
     {
-        Task<ChangeRequestResponse> GetRealisAllTestState();
+        Task<ChangeRequestResponse> GetRealisAllTestState(string qtpNumber);
     }
 }

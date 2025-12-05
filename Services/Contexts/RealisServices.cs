@@ -55,7 +55,7 @@ namespace QTPCR.Services.Contexts
 
         public string GetVersion(string endpointName)
         {
-            using (var connection = new OracleConnection(_configuration["QTPIFX"]))
+            using (var connection = new OracleConnection(_configuration["ConnectionStrings:QTP"]))
             {
                 connection.Open();
                 using (var command = new OracleCommand("SELECT VERSION FROM QTP_REALIS_ENDPOINT_VERSION WHERE ENDPOINT_NAME = '" + endpointName + "'  AND IS_USED = 'Y'", connection))

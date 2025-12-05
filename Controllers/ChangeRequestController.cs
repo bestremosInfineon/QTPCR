@@ -1,21 +1,28 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web.Http;
+﻿using Microsoft.AspNetCore.Mvc;
+using QTPCR.Services.Contracts;
 
 namespace QTPCR.Controllers
 {
-    [RoutePrefix("changerequest")]
-    public class ChangeRequestController : ApiController
+    [ApiController]
+    public class ChangeRequestController : Controller
     {
+        private readonly IChangeRequestServices _changeRequestServices;
+        private readonly ILogsServices _logsServices;
+
+        public ChangeRequestController(ILogsServices logsServices, IChangeRequestServices changeRequestServices)
+        {
+            _logsServices = logsServices;
+            _changeRequestServices = changeRequestServices;
+        }
+
         [HttpPost]
         [Route("getStates")]
-        public async Task<IHttpActionResult> GetStates()
+        public async Task<IActionResult> GetStates(string qtpNumber)
         {
             try
             {
-                return Ok();
+                
+                return Ok(await _changeRequestServices.GetRealisAllTestState(qtpNumber));
             }
             catch (Exception err)
             {

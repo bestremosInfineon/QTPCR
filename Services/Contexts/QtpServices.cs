@@ -5,7 +5,7 @@ using System.Data;
 
 namespace QTPCR.Services.Contexts
 {
-    public class QtpServices
+    public class QtpServices : IQtpServices
     {
         private readonly IConfiguration _configuration;
         private readonly IRealisService _realisService;
@@ -22,7 +22,7 @@ namespace QTPCR.Services.Contexts
         {
             List<StressTestDetails> StressTableRealisList = new List<StressTestDetails>();
 
-            using (OracleConnection conn = new OracleConnection(_configuration["ConnectionString:QTP"]))
+            using (OracleConnection conn = new OracleConnection(_configuration["ConnectionStrings:QTP"]))
             {
                 conn.Open();
 
@@ -58,7 +58,7 @@ namespace QTPCR.Services.Contexts
             return StressTableRealisList;
         }
 
-        public List<TestState> GetAllowedTestStateForCR(string enable_cr)
+        public async Task<List<TestState>> GetAllowedTestStateForCR(string enable_cr)
         {
             try
             {
@@ -99,7 +99,7 @@ namespace QTPCR.Services.Contexts
             }
         }
 
-        public string GetConfigByAttribute(string attribute)
+        public async Task<string> GetConfigByAttribute(string attribute)
         {
             try
             {
