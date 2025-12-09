@@ -17,13 +17,14 @@ namespace QTPCR.Services.Contexts
 
         public async Task<HttpResponseMessage> GetRealisStressStatus(string json_standard)
         {
+            string connString = Environment.GetEnvironmentVariable("RealistHostName") ?? _configuration["RealisHostname:Dev"];
             try
             {
                 string access_token = ClaimsHelper.GetEnviromentAccessToken();
                 var handler = new WinHttpHandler();
                 using (var client = new HttpClient(handler))
                 {
-                    var realis_hostname = _configuration["RealisHostname:Dev"].ToString();
+                    var realis_hostname = connString;
 
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Add("Authorization", "Bearer " + access_token);
@@ -55,7 +56,9 @@ namespace QTPCR.Services.Contexts
 
         public string GetVersion(string endpointName)
         {
-            using (var connection = new OracleConnection(_configuration["ConnectionStrings:QTP"]))
+            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
+
+            using (var connection = new OracleConnection(connString))
             {
                 connection.Open();
                 using (var command = new OracleCommand("SELECT VERSION FROM QTP_REALIS_ENDPOINT_VERSION WHERE ENDPOINT_NAME = '" + endpointName + "'  AND IS_USED = 'Y'", connection))

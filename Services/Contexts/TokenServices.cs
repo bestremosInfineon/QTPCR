@@ -122,11 +122,10 @@ namespace QTPCR.Services.Contexts
 
             //var tokenResponse = await response.Content.ReadAsStringAsync();
             //var token = JsonConvert.DeserializeObject<TokenResponse>(tokenResponse);
+            string tokenEndpoint = $"{Environment.GetEnvironmentVariable("Issuer") ?? _configuration["Issuer"]}/as/token.oauth2";
+            string clientId = Environment.GetEnvironmentVariable("ClientId") ?? _configuration["ClientId"];
+            string clientSecret = Environment.GetEnvironmentVariable("ClientSecret") ?? _configuration["ClientSecret"];
 
-
-            string tokenEndpoint = _configuration["Issuer"] + "/as/token.oauth2";
-            string clientId = _configuration["ClientId"];
-            string clientSecret = _configuration["ClientSecret"];
             using var client = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
 

@@ -21,8 +21,9 @@ namespace QTPCR.Services.Contexts
 
         public async Task<string> ErrorLog(ErrorModel errorModel)
         {
+            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
             DateTime dateTime = DateTime.Now;
-            using (OracleConnection conn = new OracleConnection(_configuration["ConnectionStrings:QTP"]))
+            using (OracleConnection conn = new OracleConnection(connString))
             {
                 OracleTransaction transaction;
                 conn.Open();

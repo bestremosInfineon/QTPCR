@@ -20,9 +20,10 @@ namespace QTPCR.Services.Contexts
 
         public async Task<List<StressTestDetails>> StressTableRealisTestAll(string qtpNumber)
         {
+            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
             List<StressTestDetails> StressTableRealisList = new List<StressTestDetails>();
 
-            using (OracleConnection conn = new OracleConnection(_configuration["ConnectionStrings:QTP"]))
+            using (OracleConnection conn = new OracleConnection(connString))
             {
                 conn.Open();
 
@@ -60,10 +61,11 @@ namespace QTPCR.Services.Contexts
 
         public async Task<List<TestState>> GetAllowedTestStateForCR(string enable_cr)
         {
+            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
             try
             {
                 List<TestState> testStateList = new List<TestState>();
-                using (OracleConnection conn = new OracleConnection(_configuration["ConnectionString:QTP"]))
+                using (OracleConnection conn = new OracleConnection(connString))
                 {
                     conn.Open();
 
@@ -101,9 +103,10 @@ namespace QTPCR.Services.Contexts
 
         public async Task<string> GetConfigByAttribute(string attribute)
         {
+            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
             try
             {
-                using (OracleConnection conn = new OracleConnection(_configuration["ConnectionString:QTP"]))
+                using (OracleConnection conn = new OracleConnection(connString))
                 {
                     string testprogramvalue = "";
                     conn.Open();
