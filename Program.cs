@@ -1,7 +1,11 @@
+using Duende.IdentityServer.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QTPCR.Services.Contexts;
 using QTPCR.Services.Contracts;
 using System;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +17,7 @@ builder.Services.AddScoped<IChangeRequestServices, ChangeRequestServices>();
 builder.Services.AddScoped<IRealisService, RealisServices>();
 builder.Services.AddScoped<IQtpServices, QtpServices>();
 builder.Services.AddScoped<ILogsServices, LogsServices>();
+builder.Services.AddScoped<ITokenServices, TokenServices>();
 
 builder.Configuration.AddJsonFile("appsettings.json");
 

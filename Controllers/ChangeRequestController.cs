@@ -8,11 +8,13 @@ namespace QTPCR.Controllers
     {
         private readonly IChangeRequestServices _changeRequestServices;
         private readonly ILogsServices _logsServices;
+        private readonly ITokenServices _tokenServices;
 
-        public ChangeRequestController(ILogsServices logsServices, IChangeRequestServices changeRequestServices)
+        public ChangeRequestController(ILogsServices logsServices, IChangeRequestServices changeRequestServices, ITokenServices tokenServices)
         {
             _logsServices = logsServices;
             _changeRequestServices = changeRequestServices;
+            _tokenServices = tokenServices;
         }
 
         [HttpPost]
@@ -23,6 +25,20 @@ namespace QTPCR.Controllers
             {
                 
                 return Ok(await _changeRequestServices.GetRealisAllTestState(qtpNumber));
+            }
+            catch (Exception err)
+            {
+                return BadRequest($"{err.Message}");
+            }
+        }
+
+        [HttpGet]
+        [Route("getToken")]
+        public async Task<IActionResult> GetToken()
+        {
+            try
+            {
+                return Ok(await _tokenServices.GetTokenResponse("asdasdasd"));
             }
             catch (Exception err)
             {
