@@ -9,10 +9,12 @@ namespace QTPCR.Services.Contexts
 
     {
         private readonly IConfiguration _configuration;
+        private readonly IQtpServices _qtpServices;
 
-        public RealisServices(IConfiguration configuration)
+        public RealisServices(IConfiguration configuration, IQtpServices qtpServices)
         {
             _configuration = configuration;
+            _qtpServices = qtpServices;
         }
 
         public async Task<HttpResponseMessage> GetRealisStressStatus(string json_standard)
@@ -29,9 +31,8 @@ namespace QTPCR.Services.Contexts
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Add("Authorization", "Bearer " + access_token);
 
-
                     var content = new System.Net.Http.StringContent(json_standard, Encoding.UTF8, "application/json");
-                    string version = GetVersion("GET-TESTS-STATE");
+                    string version = await _qtpServices.GetVersion("GET-TESTS-STATE");
                     var request = new HttpRequestMessage
                     {
                         Method = HttpMethod.Get,
@@ -53,26 +54,5 @@ namespace QTPCR.Services.Contexts
             }
 
         }
-
-        public string GetVersion(string endpointName)
-        {
-            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
-
-            using (var connection = new OracleConnection(connString))
-            {
-                connection.Open();
-                using (var command = new OracleCommand("SELECT VERSION FROM QTP_REALIS_ENDPOINT_VERSION WHERE ENDPOINT_NAME = '" + endpointName + "'  AND IS_USED = 'Y'", connection))
-                {
-                    command.Parameters.Add(new OracleParameter("endpointName", endpointName));
-                    var result = command.ExecuteScalar();
-                    if (result == null)
-                    {
-                        throw new InvalidOperationException($"The endpoint '{endpointName}' is deprecated.");
-                    }
-                    return result.ToString();
-                }
-            }
-        }
- 
     }
 }

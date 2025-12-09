@@ -8,15 +8,11 @@ namespace QTPCR.Services.Contexts
     public class QtpServices : IQtpServices
     {
         private readonly IConfiguration _configuration;
-        private readonly IRealisService _realisService;
 
-
-        public QtpServices(IConfiguration configuration, IRealisService realisService)
+        public QtpServices(IConfiguration configuration)
         {
             _configuration = configuration;
-            _realisService = realisService;
         }
-
 
         public async Task<List<StressTestDetails>> StressTableRealisTestAll(string qtpNumber)
         {
@@ -126,6 +122,26 @@ namespace QTPCR.Services.Contexts
             {
 
                 throw;
+            }
+        }
+
+        public async Task<string> GetVersion(string endpointName)
+        {
+            string connString = Environment.GetEnvironmentVariable("QTPConnectionString") ?? _configuration["ConnectionStrings:QTP"];
+
+            using (var connection = new OracleConnection(connString))
+            {
+                connection.Open();
+                using (var command = new OracleCommand("SELECT VERSION FROM QTP_REALIS_ENDPOINT_VERSION WHERE ENDPOINT_NAME = '" + endpointName + "'  AND IS_USED = 'Y'", connection))
+                {
+                    command.Parameters.Add(new OracleParameter("endpointName", endpointName));
+                    var result = command.ExecuteScalar();
+                    if (result == null)
+                    {
+                        throw new InvalidOperationException($"The endpoint '{endpointName}' is deprecated.");
+                    }
+                    return result.ToString();
+                }
             }
         }
 
